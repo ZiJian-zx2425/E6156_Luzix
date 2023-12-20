@@ -79,42 +79,52 @@
 
 <!-- 导航栏 -->
 <div class="navbar">
-    <a href="#home">Home</a>-->
+    <!-- <a href="#home"  id="patientButton">Patient</a>-->
     <div class="dropdown">
-        <button class="dropbtn">Patient</button>
+        <button class="dropbtn" id="patientButton">Patient</button>
+        <div class="dropdown-content">
+            {% if 'google_id' in session %}
+           <a href="/logout">Log Out</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="dropdown">
+        {% if session["role"] == "patient"%}
+        <button class="dropbtn">Disease Prediction</button>
+        {% elif session["role"] == "doctor" %}
+        <button class="dropbtn">My Patients</button>
+        {% endif %}
         <div class="dropdown-content">
             <a href="/model_output">Time Series Models</a>
             <a href="/variable_analysis">Variable Analysis</a>
         </div>
     </div>
-<!--    <a href="#patient">patient</a>&ndash;&gt;-->
-    <a href="#Appointmet">Appointment</a>
-    <a href="#AIchat">AIchat</a>
-<!--    <a href="#home">Home</a>-->
-<!--    <a href="#people">People</a>-->
-<!--    <a href="/labs">Labs</a>-->
-<!--    <a href="http://127.0.0.1:3000">Chat</a>-->
-<!--    <a href="#students">For Students</a>-->
-<!--    <a href="#publications">Publications</a>-->
-<!--    <div class="dropdown">-->
-<!--        <button class="dropbtn">Ongoing Projects</button>-->
-<!--        <div class="dropdown-content">-->
-<!--            <a href="/model_output">Time Series Models</a>-->
-<!--            <a href="/variable_analysis">Variable Analysis</a>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--    <a href="#events">Events</a>-->
-<!--    <a href="#locations">Locations</a>-->
-<!--    <a href="#internal">Internal</a>-->
+    <a href="http://localhost:4200/">Appointment</a>
+    {% if session["role"]  == "patient" %}
+    <a href="http://localhost:63854/">AI chat</a>
+    {% endif %}
 </div>
 
 <!-- 自我介绍部分 -->
 <div style="padding:20px; background-color: rgba(255, 255, 255, 0.8); margin: 50px;">
-    <h2>This is our navigation page!</h2>
-<!--    <p>Hi! Welcome to our lab. I'm pro.W, specializing in the field of medical data analysis. I've been working on various projects, and you can explore more about them in the 'Ongoing Projects' section.</p>-->
-    <p>Please choose you Service.</p>
-    <img src="/static/cat.jpg" alt="Cute Cat" style="width:300px;height:300px;">
+    {% if session["role"]  == "patient" %}
+        <h2>Welcome, patient! </h2>
+        <p>Please choose your service.</p>
+        <img src="/static/cat.jpg" alt="Patient Image" style="width:300px;height:300px;">
+    {% elif session["role"] == "doctor" %}
+        <h2>Welcome, doctor!</h2>
+        <p>Here are your tools.</p>
+        <img src="/static/doctor_cat.jpg" alt="Doctor Image" style="width:300px;height:300px;">
+    {% elif session["role"] == "volunteer" %}
+        <h2>Welcome, volunteer! </h2>
+        <p>How can you help today?</p>
+        <img src="/static/volunteer.jpg" alt="Volunteer Image" style="width:300px;height:300px;">
+    {% endif %}
 </div>
+
+
+<!-- javascript file -->
+<script src="{{ url_for('static', filename='js/login_status.js') }}"></script>
 
 </body>
 </html>

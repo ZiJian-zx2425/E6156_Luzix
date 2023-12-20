@@ -1,0 +1,11 @@
+<form (ngSubmit)="onSubmit()">
+    <div>
+        <label for="doctorName">Doctor's Name:</label>
+        <input type="text" id="doctorName" [(ngModel)]="doctorName" name="doctorName" required>
+    </div>
+    <div>
+        <label for="officeHours">Office Hours (comma-separated):</label>
+        <input type="text" id="officeHours" [(ngModel)]="officeHours" name="officeHours" required>
+    </div>
+    <button type="submit">Save Office Hours</button>
+</form>

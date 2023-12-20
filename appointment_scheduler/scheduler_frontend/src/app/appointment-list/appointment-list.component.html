@@ -1,0 +1,10 @@
+<!-- In appointment-list.component.html -->
+<ul>
+    <li *ngFor="let appointment of appointments">
+        <p>Patient: {{ appointment.patientName }}</p>
+        <p>Doctor: {{ appointment.doctorName }}</p>
+        <p>Date & Time: {{ appointment.dateTime }}</p>
+        <button [routerLink]="['/edit-appointment', appointment.id]">Edit</button>
+        <button (click)="cancelAppointment(appointment.id)">Cancel</button>
+    </li>
+</ul>

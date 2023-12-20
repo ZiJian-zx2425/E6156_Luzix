@@ -1,5 +1,8 @@
+import asyncio
+import random
+import aiohttp
 from flask import Flask
-from flask import request, redirect, session, url_for, render_template, request
+from flask import request, redirect, session, url_for, render_template, request, jsonify
 from sklearn.metrics import roc_auc_score
 from keras.layers import SimpleRNN
 from keras.models import Sequential
@@ -31,8 +34,9 @@ from google_auth_oauthlib.flow import Flow
 from pip._vendor import cachecontrol
 import google.auth.transport.requests
 
-
-
+# 'google_id': '110788464327696265201', Shuting Li, role: patient   # sl5185@columbia.edu
+# 'google_id': '104405107080836112407', Shuting Li, role: doctor    # shuting.li.sli@gmail.com
+# 'google_id': '117740487543455173970', Shuting Li, role: volunteer # lishuting.sli2@gmail.com
 
 
 def load_data_simple(seqFile, labelFile, timeFile=''):
@@ -244,14 +248,18 @@ import xgboost as xgb
 bst = xgb.Booster()
 bst.load_model('best_xgb_model.model')
 
-
 app = Flask(__name__)
+
 app.secret_key = "CodeSpecialist.com"
-
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
 GOOGLE_CLIENT_ID = "41060034206-ommaaipvi81ap9cm3bq3neu702c2uger.apps.googleusercontent.com"
 client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret.json")
+
+users_db = {
+    '110788464327696265201': 'patient',
+    '104405107080836112407': 'doctor',
+    '117740487543455173970': 'volunteer',
+}
 
 flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
@@ -266,19 +274,82 @@ def login_is_required(function):
             return abort(401)  # Authorization required
         else:
             return function()
-
     return wrapper
 
+def call_microservices_sync():
+    services = [
+        "http://127.0.0.1:5000",  # Disease Prediction Service
+        "http://127.0.0.1:5001",  # Appointment Scheduler Service
+        "http://127.0.0.1:5002"   # AI Chat Service
+    ]
+
+    responses = []
+    for service in services:
+        response = requests.get(service)
+        responses.append(f"Response from {service}: {response.text}")
+        '''
+        if response.status_code == 200:
+            # If the request was successful, process the response
+            responses.append(f"Response from {service}: {response.text}")
+        else:
+            # Handle different response status codes appropriately
+            responses.append(f"Error from {service}: Status code {response.status_code}")
+        '''
+    return responses
+
+async def call_service(service):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(service) as response:
+            result = await response.text()
+            return f"Response from {service}: {result}"
+
+async def call_microservices_async():
+    services = [
+        "http://localhost:5000",
+        "http://localhost:5001",
+        "http://localhost:5002"
+    ]
+
+    responses = []
+    for _ in range(10):
+        random.shuffle(services)
+        responses += await asyncio.gather(*(call_service(service) for service in services))
+    return responses
+
+@app.route('/call-microservices-sync')
+def sync_call_services():
+    responses = call_microservices_sync()
+    return jsonify(responses)
+
+@app.route('/call-microservices-async')
+def async_call_services():
+    responses = asyncio.run(call_microservices_async())
+    return jsonify(responses)
+
+@app.route("/")
+def navbar():
+    print("main page accessed")
+    print(session)
+    if 'google_id' not in session:
+        # 用户未登录，重定向到登录页面
+        return redirect('/login')
+    user_role = session.get('role', 'not logged in')
+    return render_template('index.html', user_role=user_role)
 
 @app.route("/login")
 def login():
-    authorization_url, state = flow.authorization_url()
+    print("login page accessed")
+    authorization_url, state = flow.authorization_url(
+        prompt='consent'  # Forces re-consent and re-authentication
+    )
+    print("authorization_url: ", authorization_url)
     session["state"] = state
     return redirect(authorization_url)
 
 
 @app.route("/callback")
 def callback():
+    print("callback endpoint is accessed")
     flow.fetch_token(authorization_response=request.url)
 
     if not session["state"] == request.args["state"]:
@@ -297,27 +368,56 @@ def callback():
 
     session["google_id"] = id_info.get("sub")
     session["name"] = id_info.get("name")
+    session['role'] = users_db.get(id_info.get("sub"), 'not logged in') # set user role
     return redirect("/protected_area")
 
 
 @app.route("/logout")
 def logout():
+    print("logout endpoint accessed")
+
+    # Optional: Revoke the Google token
+    if 'credentials' in session:
+        credentials = google.oauth2.credentials.Credentials(
+            **session['credentials'])
+
+        revoke = request.Request(
+            'https://accounts.google.com/o/oauth2/revoke',
+            params={'token': credentials.token},
+            headers={'content-type': 'application/x-www-form-urlencoded'})
+
+        try:
+            request.urlopen(revoke)
+        except Exception as e:
+            print(f'An error occurred: {e}')
+
     session.clear()
     return redirect("/")
 
+@app.route('/role')
+def get_role():
+    user_role = session.get('role', 'not logged in')
+    return jsonify({"role": user_role})
 
 
-@app.route('/')
-def navbar():
-    if 'user_id' not in session:
-        # 用户未登录，重定向到登录页面
-        return redirect(url_for('login'))
+@app.route('/api/is_logged_in')
+def is_logged_in():
+    is_logged_in = 'google_id' in session
+    user_role = session.get('role', 'not logged in') if is_logged_in else 'not logged in'
+    return jsonify(logged_in=is_logged_in, role=user_role)
 
-@app.route('/protected_area')
+
+@app.route("/protected_area")
 def hello():
+    if 'google_id' not in session:
+        # 用户未登录，重定向到登录页面
+        return redirect(url_for("login"))
+    print("Accessed the protected area")
+    print(session)
     return render_template('navbar.html')
 
-@app.route('/model_output', methods=['GET', 'POST'])
+
+@app.route("/model_output", methods=['GET', 'POST'])
 def model_output():
     if request.method == 'POST':
         patient_id = int(request.form['patient_id'])
@@ -346,13 +446,13 @@ def model_output():
 
 
         # Return the prediction results
-        return render_template('model_output.html', predicted_output_gru=pred_y_gru, predicted_output_lstm=pred_y_lstm, predicted_output_logreg=pred_y_logreg, predicted_output_rf=pred_y_rf, predicted_output_xgb=pred_y_xgb, input_data=input_data, actual_output=y, patient_id=patient_id)
+        return render_template("model_output.html", predicted_output_gru=pred_y_gru, predicted_output_lstm=pred_y_lstm, predicted_output_logreg=pred_y_logreg, predicted_output_rf=pred_y_rf, predicted_output_xgb=pred_y_xgb, input_data=input_data, actual_output=y, patient_id=patient_id)
     else:
-        return render_template('model_output.html')
+        return render_template("model_output.html")
 
-@app.route('/labs')
+@app.route("/labs")
 def labs():
-    return render_template('labs.html')
+    return render_template("labs.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
