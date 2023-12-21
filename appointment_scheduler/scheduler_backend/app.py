@@ -41,7 +41,9 @@ users_db = {
 flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
     scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
-    redirect_uri="http://127.0.0.1:5001/callback"
+    # redirect_uri="http://127.0.0.1:5001/callback"
+    # redirect_uri="http://184.73.151.162:5001/callback"
+    redirect_uri="https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/callback"
 )
 
 
@@ -150,13 +152,15 @@ def callback():
     session["name"] = id_info.get("name")
     session['role'] = users_db.get(id_info.get("sub"), 'not logged in') # set user role
     token = create_token(id_info.get("sub"), id_info.get("name"), users_db.get(id_info.get("sub"), 'not logged in'))
-    return redirect(f"http://localhost:4200/auth-success?token={token}")
+    # return redirect(f"http://localhost:4200/auth-success?token={token}")
+    print("before callback redirect return statement")
+    # OLD S3 BUCKET: appointment-scheduler-angular
+    # return redirect(f"http://scheduler-frontend.s3-website-us-east-1.amazonaws.com/auth-success?token={token}")
+    # return redirect(f"http://scheduler-frontend.s3-website-us-east-1.amazonaws.com")
 
-    # return redirect("/")
-    # return redirect("http://localhost:4200/schedule")
-    # return redirect("http://localhost:4200/appointments")
-    # return redirect("/appointments")
-
+    # NEW S3 BUCKET: appointment-scheduler-angular
+    return redirect(f"http://appointment-scheduler-angular.s3-website-us-east-1.amazonaws.com")
+    # return redirect(f"http://appointment-scheduler-angular.s3-website-us-east-1.amazonaws.com/auth-success?token={token}")
 
 def create_token(user_id, user_name, user_role):
     payload = {

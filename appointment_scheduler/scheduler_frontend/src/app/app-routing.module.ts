@@ -21,7 +21,19 @@ const routes: Routes = [
   { path: 'officehour', component: OfficehourComponent, canActivate: [AuthGuard]},
   { path: 'postedofficehours', component: PostedOfficeHoursComponent, canActivate: [AuthGuard]},
   { path: 'patients-records', component: PatientsRecordsComponent, canActivate: [AuthGuard] },
-  { path: 'search-by-patient', component: SearchByPatientComponent, canActivate: [AuthGuard] },
+  { path: 'search-by-patient', component: SearchByPatientComponent, canActivate: [AuthGuard] }
+
+  /*
+  { path: 'schedule', component: ScheduleComponent},
+  { path: 'appointments', component: AppointmentListComponent},
+  { path: 'edit-appointment/:id', component: AppointmentEditComponent},
+  { path: 'auth-success', component: AuthSuccessComponent },
+  { path: 'officehour', component: OfficehourComponent},
+  { path: 'postedofficehours', component: PostedOfficeHoursComponent},
+  { path: 'patients-records', component: PatientsRecordsComponent},
+  { path: 'search-by-patient', component: SearchByPatientComponent}
+
+   */
 ];
 
 @NgModule({

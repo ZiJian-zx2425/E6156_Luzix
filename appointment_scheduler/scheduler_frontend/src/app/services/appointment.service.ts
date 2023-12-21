@@ -14,9 +14,9 @@ export interface Appointment {
     providedIn: 'root'
 })
 export class AppointmentService {
-    // private flaskEndpoint = 'http://127.0.0.1:5000/appointments'; // local
-    private flaskEndpoint = 'http://127.0.0.1:5001/appointments'; // local
-    private officeHoursUrl = 'http://127.0.0.1:5001/officehours'; // URL to your Flask API
+    // private flaskEndpoint = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/appointments'; // local
+    private flaskEndpoint = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/appointments'; // local
+    private officeHoursUrl = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/officehours'; // URL to your Flask API
     // private flaskEndpoint = 'http://184.73.151.162:5000/appointments'; // EC2
 
     constructor(private http: HttpClient) { }

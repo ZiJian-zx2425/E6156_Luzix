@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
         const isLoggedIn = this.authService.isLoggedIn();
         if (!isLoggedIn) {
             // Redirect to the backend login endpoint
-            window.location.href = 'http://127.0.0.1:5001/login';
+            window.location.href = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/login';
             return false;
         }
         return true;

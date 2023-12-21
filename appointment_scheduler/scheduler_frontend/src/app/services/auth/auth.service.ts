@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
     providedIn: 'root'
 })
 export class AuthService {
-    private readonly isLoggedInUrl = 'http://127.0.0.1:5001/api/is_logged_in';
+    private readonly isLoggedInUrl = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/api/is_logged_in';
 
     constructor(private http: HttpClient, private router: Router) {}
 
@@ -84,9 +84,9 @@ export class AuthService {
         localStorage.removeItem('userRole');
 
         // Optionally call the backend logout endpoint
-        this.http.get('http://127.0.0.1:5001/logout').subscribe(() => {
+        this.http.get('https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/logout').subscribe(() => {
             // Redirect to login or home page after successful logout
-            this.router.navigate(['http://127.0.0.1:5001/login']); // Replace '/login' with your login route
+            this.router.navigate(['https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/login']); // Replace '/login' with your login route
         });
     }
 

@@ -7,7 +7,7 @@ import {HttpClient, HttpClientModule, HttpErrorResponse} from '@angular/common/h
   providedIn: 'root'
 })
 export class OfficeHourService {
-  private officeHoursUrl = 'http://127.0.0.1:5001/officehours'; // URL to your Flask API
+  private officeHoursUrl = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/officehours'; // URL to your Flask API
   constructor(private http: HttpClient) {}
 
   saveOfficeHours(doctorName: string, slots: string[]): Observable<any> {
