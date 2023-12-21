@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Navbar</title>
+    <style>
+        /* 设置背景图片 */
+        body {
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            font-family: Arial, sans-serif;
+        }
+
+        /* 导航栏样式 */
+        .navbar {
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        .navbar a, .dropbtn {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        .navbar a:hover, .dropdown:hover .dropbtn {
+            background-color: #ddd;
+            color: black;
+        }
+
+        /* Dropdown Styles */
+        .dropdown {
+            float: left;
+            overflow: hidden;
+        }
+
+        .dropdown .dropbtn {
+            font-size: 16px;
+            border: none;
+            outline: none;
+            color: white;
+            padding: 14px 16px;
+            background-color: inherit;
+            font-family: inherit;
+            margin: 0;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            float: none;
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<div class="navbar">
+    <!-- <a href="#home"  id="patientButton">Patient</a>-->
+    <div class="dropdown">
+        <button class="dropbtn" id="patientButton">Patient</button>
+        <div class="dropdown-content">
+            {% if 'google_id' in session %}
+           <a href="/logout">Log Out</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="dropdown">
+        {% if session["role"] == "patient"%}
+        <button class="dropbtn">Disease Prediction</button>
+        {% elif session["role"] == "doctor" %}
+        <button class="dropbtn">My Patients</button>
+        {% endif %}
+        <div class="dropdown-content">
+            <a href="/model_output">Time Series Models</a>
+            <a href="/variable_analysis">Variable Analysis</a>
+        </div>
+    </div>
+    <a href="http://localhost:4200/">Appointment</a>
+    {% if session["role"]  == "patient" %}
+    <a href="http://localhost:63854/">AI chat</a>
+    {% endif %}
+</div>
+
+<!-- 自我介绍部分 -->
+<div style="padding:20px; background-color: rgba(255, 255, 255, 0.8); margin: 50px;">
+    {% if session["role"]  == "patient" %}
+        <h2>Welcome, patient! </h2>
+        <p>Please choose your service.</p>
+        <img src="/static/cat.jpg" alt="Patient Image" style="width:300px;height:300px;">
+    {% elif session["role"] == "doctor" %}
+        <h2>Welcome, doctor!</h2>
+        <p>Here are your tools.</p>
+        <img src="/static/doctor_cat.jpg" alt="Doctor Image" style="width:300px;height:300px;">
+    {% elif session["role"] == "volunteer" %}
+        <h2>Welcome, volunteer! </h2>
+        <p>How can you help today?</p>
+        <img src="/static/volunteer.jpg" alt="Volunteer Image" style="width:300px;height:300px;">
+    {% endif %}
+</div>
+
+
+<!-- javascript file -->
+<script src="{{ url_for('static', filename='js/login_status.js') }}"></script>
+
+</body>
+</html>
