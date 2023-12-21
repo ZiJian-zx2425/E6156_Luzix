@@ -1,8 +1,0 @@
-<!-- postedofficehours.component.html -->
-
-<div *ngFor="let doctor of allOfficeHours | keyvalue">
-    <h2>{{ doctor.key }}</h2>
-    <ul>
-        <li *ngFor="let hour of doctor.value">{{ hour }}</li>
-    </ul>
-</div>
