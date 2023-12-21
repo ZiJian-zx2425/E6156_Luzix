@@ -22,7 +22,6 @@ const routes: Routes = [
   { path: 'postedofficehours', component: PostedOfficeHoursComponent, canActivate: [AuthGuard]},
   { path: 'patients-records', component: PatientsRecordsComponent, canActivate: [AuthGuard] },
   { path: 'search-by-patient', component: SearchByPatientComponent, canActivate: [AuthGuard] }
-
   /*
   { path: 'schedule', component: ScheduleComponent},
   { path: 'appointments', component: AppointmentListComponent},

@@ -159,8 +159,8 @@ def callback():
     # return redirect(f"http://scheduler-frontend.s3-website-us-east-1.amazonaws.com")
 
     # NEW S3 BUCKET: appointment-scheduler-angular
-    return redirect(f"http://appointment-scheduler-angular.s3-website-us-east-1.amazonaws.com")
-    # return redirect(f"http://appointment-scheduler-angular.s3-website-us-east-1.amazonaws.com/auth-success?token={token}")
+    # return redirect(f"http://appointment-scheduler-angular.s3-website-us-east-1.amazonaws.com")
+    return redirect(f"http://appointment-scheduler-angular.s3-website-us-east-1.amazonaws.com/auth-success?token={token}")
 
 def create_token(user_id, user_name, user_role):
     payload = {
@@ -319,6 +319,7 @@ def add_appointments():
     new_appointments = request.json
     new_id = max(appointment['id'] for appointment in appointments) + 1
     new_appointments['id'] = new_id
+    new_appointments['status'] = 'pending'
     appointments.append(new_appointments)
 
     # new_appointment_added = appointments[len(appointments)-1]

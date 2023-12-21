@@ -6,9 +6,11 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class PatientsRecordsService {
-  private apiUrl = 'http://localhost:5001/patients-records'; // URL to your Flask API
-  private doctorsPatientsUrl = 'http://localhost:5001/doctors-patients'; // URL to your Flask API
-  private searchbypatientUrl = 'http://localhost:5001/search-by-patient'; // URL to your Flask API
+
+  private apiUrl = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/patients-records';
+  private doctorsPatientsUrl = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/doctors-patients';
+  private searchbypatientUrl = 'https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/search-by-patient';
+
   constructor(private http: HttpClient) {}
 
   getPatients(doctorId: string): Observable<string[]> {
