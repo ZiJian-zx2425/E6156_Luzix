@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Navbar</title>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<div class="navbar">
+  <!-- <a href="#home"  id="patientButton">Patient</a>-->
+  <div class="dropdown">
+    <button class="dropbtn" id="patientButton">{{ userRole }}</button>
+    <div class="dropdown-content" > <!--*ngIf="isLoggedIn"-->
+      <a href="#" (click)="onLogout()">Log Out</a>
+    </div>
+  </div>
+  <div class="dropdown">
+    <ng-container *ngIf="userRole === 'Patient'; else doctorBlock">
+      <button class="dropbtn">Disease Prediction</button>
+    </ng-container>
+    <ng-template #doctorBlock>
+      <ng-container *ngIf="userRole === 'Doctor'">
+        <button class="dropbtn">My Patients</button>
+      </ng-container>
+    </ng-template>
+    <div class="dropdown-content">
+      <a href="/patients-records">My Patient Records</a>
+      <a href="/search-by-patient">Search By Patient</a>
+    </div>
+  </div>
+  <a href="http://localhost:4200/">Appointment</a>
+  <!-- <a *ngIf="userRole === 'Patient'" href="http://localhost:54424/">Chat</a> -->
+  <!-- Add a dropdown menu for 'AI-Chat' and 'Contact-Doctor' -->
+  <div class="dropdown" *ngIf="userRole === 'Patient'">
+    <button class="dropbtn">Chat</button>
+    <div class="dropdown-content">
+      <a routerLink="/chat">AI-Chat</a>
+      <a routerLink="/contact-doctor">Contact-Doctor</a>
+    </div>
+  </div>
+  <!-- <a href="http://localhost:54424/" >AI chat</a>--> <!--*ngIf="role === 'patient'"-->
+</div>
+</body>
+</html>

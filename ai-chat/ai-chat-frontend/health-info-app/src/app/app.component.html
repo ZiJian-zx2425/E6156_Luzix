@@ -1,2 +1,12 @@
 <!-- app.component.html -->
-<router-outlet></router-outlet>
+<div class="container">
+  <app-navbar></app-navbar>
+  <h1>Welcome to the Chat Service</h1>
+  <nav *ngIf="userRole === 'patient'">
+    <ul>
+      <li><a routerLink="/chat">AI Chat</a></li>
+      <li><a routerLink="/contact-doctor">Contact Doctor</a></li>
+    </ul>
+  </nav>
+  <router-outlet></router-outlet>
+</div>

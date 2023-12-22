@@ -1,0 +1,87 @@
+/* Chat Service Container */
+.chat-service-container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+/* Message Posting Section */
+.message-posting-section {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.message-posting-section label,
+.message-posting-section select,
+.message-posting-section textarea {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.message-posting-section button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Message Listing/Editing Section */
+.message-listing-section {
+    background-color: #fff;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+.messages-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.message-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.message-item:last-child {
+    border-bottom: none;
+}
+
+.message-display .message-text,
+.message-display .message-doctor {
+    margin: 5px 0;
+}
+
+.message-edit textarea {
+    display: block;
+    width: calc(100% - 20px);
+    margin-bottom: 10px;
+}
+
+.message-edit button {
+    margin-right: 10px;
+    padding: 5px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.message-edit button:last-child {
+    background-color: #ffc107;
+}
+
+/* Add responsiveness if needed */
+@media (max-width: 768px) {
+    .chat-service-container {
+        padding: 10px;
+    }
+}
