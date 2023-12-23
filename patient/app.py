@@ -1,40 +1,31 @@
+import asyncio
+import random
+import aiohttp
 from flask import Flask
-from flask import request, redirect, session, url_for, render_template, request
-from sklearn.metrics import roc_auc_score
-from keras.layers import SimpleRNN
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import Adam
-from keras.layers import Dropout
-from keras.regularizers import l1
-import numpy as np
-import pickle
-from sklearn.metrics import roc_auc_score
-from keras.layers import SimpleRNN
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import Adam
-from keras.layers import Dropout
-from keras.regularizers import l1
-from keras.layers import Bidirectional, GRU
-import keras
-from flask_cors import CORS
+from flask import request, redirect, session, url_for, render_template, request, jsonify
+
+import pymongo
+from utils import *
+from datetime import datetime
+
 _TEST_RATIO = 0.2
 _VALIDATION_RATIO = 0.1
 import os
 import pathlib
 
 import requests
-from flask import Flask, session, abort, redirect, request
+from flask import Flask, session, abort, redirect, request, url_for
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 from pip._vendor import cachecontrol
 import google.auth.transport.requests
+import base64
 
+# 'google_id': '110788464327696265201', Shuting Li, role: patient   # sl5185@columbia.edu
+# 'google_id': '104405107080836112407', Shuting Li, role: doctor    # shuting.li.sli@gmail.com
+# 'google_id': '117740487543455173970', Shuting Li, role: volunteer # lishuting.sli2@gmail.com
 
-
-
-
+'''
 def load_data_simple(seqFile, labelFile, timeFile=''):
     with open(seqFile, 'rb') as f:
         sequences = pickle.load(f)
@@ -243,20 +234,18 @@ import xgboost as xgb
 # Load the XGBoost model
 bst = xgb.Booster()
 bst.load_model('best_xgb_model.model')
+'''
+app = Flask(__name__,static_folder = 'static', static_url_path = '/static')
 
-
-app = Flask(__name__)
 app.secret_key = "CodeSpecialist.com"
-
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
 GOOGLE_CLIENT_ID = "41060034206-ommaaipvi81ap9cm3bq3neu702c2uger.apps.googleusercontent.com"
 client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret.json")
 
 flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
     scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
-    redirect_uri="http://127.0.0.1:5000/callback"
+    redirect_uri="https://crxrcf7ds8.execute-api.us-east-1.amazonaws.com/test/patient_callback"
 )
 
 
@@ -266,19 +255,104 @@ def login_is_required(function):
             return abort(401)  # Authorization required
         else:
             return function()
-
     return wrapper
 
+def call_microservices_sync():
+    services = [
+        "http://localhost:8000",  # Disease Prediction Service
+        "http://localhost:8001",  # Appointment Scheduler Service
+        "http://localhost:8002"   # AI Chat Service
+    ]
 
-@app.route("/login")
+    responses = []
+    for service in services:
+        response = requests.get(service)
+        responses.append(f"Response from {service}: {response.text}")
+        '''
+        if response.status_code == 200:
+            # If the request was successful, process the response
+            responses.append(f"Response from {service}: {response.text}")
+        else:
+            # Handle different response status codes appropriately
+            responses.append(f"Error from {service}: Status code {response.status_code}")
+        '''
+    return responses
+
+async def call_service(service):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(service) as response:
+            result = await response.text()
+            return f"Response from {service}: {result}"
+
+async def call_microservices_async():
+    services = [
+        "http://localhost:8000",
+        "http://localhost:8001",
+        "http://localhost:8002"
+    ]
+
+    responses = []
+    for _ in range(10):
+        random.shuffle(services)
+        responses += await asyncio.gather(*(call_service(service) for service in services))
+    return responses
+
+@app.route('/call-microservices-sync')
+def sync_call_services():
+    responses = call_microservices_sync()
+    return jsonify(responses)
+
+@app.route('/call-microservices-async')
+def async_call_services():
+    responses = asyncio.run(call_microservices_async())
+    return jsonify(responses)
+
+@app.route("/")
+def navbar():
+    print("main page accessed")
+    print(session)
+    if 'google_id' not in session:
+        # 用户未登录，重定向到登录页面
+        return redirect('/patient_login')
+    user_role = session.get('role', 'not logged in')
+    return render_template('navbar.html', user_role=user_role)
+
+@app.route("/patient_login")
 def login():
-    authorization_url, state = flow.authorization_url()
+    print("login page accessed")
+    authorization_url, state = flow.authorization_url(
+        prompt='consent'  # Forces re-consent and re-authentication
+    )
+    print("authorization_url: ", authorization_url)
     session["state"] = state
     return redirect(authorization_url)
 
+#--------------------------middle ware---------------------
+@app.after_request
+def after_request(response):
+    if 'google_id' in session and session['google_id'].isdigit():
+        # check if the google id is raw id
+        encoded_bytes = base64.b64encode(session['google_id'].encode("utf-8"))
+        encoded_string = encoded_bytes.decode("utf-8")  # Convert bytes back to string
+        print(session['google_id'])
+        print('-----------------------------------------')
+        print(encoded_string)
+        session['google_id'] = encoded_string
+    return response
+#--------------------------middle ware--------------------
 
-@app.route("/callback")
+def login_is_required(function):
+    def wrapper(*args, **kwargs):
+        if "google_id" not in session:
+            return abort(401)  # Authorization required
+        else:
+            return function()
+    return wrapper
+
+@app.route("/patient_callback")
 def callback():
+    print("callback endpoint is accessed")
+    
     flow.fetch_token(authorization_response=request.url)
 
     if not session["state"] == request.args["state"]:
@@ -297,27 +371,97 @@ def callback():
 
     session["google_id"] = id_info.get("sub")
     session["name"] = id_info.get("name")
+    session['role'] = users_db.get(id_info.get("sub"), 'not logged in') # set user role
+    app.logger.debug('Session: %s', session)
+    app.logger.debug('Request Args: %s', request.args)
     return redirect("/protected_area")
 
 
-@app.route("/logout")
+@app.route("/patient_logout")
 def logout():
+    print("logout endpoint accessed")
+
+    # Optional: Revoke the Google token
+    if 'credentials' in session:
+        credentials = google.oauth2.credentials.Credentials(
+            **session['credentials'])
+
+        revoke = request.Request(
+            'https://accounts.google.com/o/oauth2/revoke',
+            params={'token': credentials.token},
+            headers={'content-type': 'application/x-www-form-urlencoded'})
+
+        try:
+            request.urlopen(revoke)
+        except Exception as e:
+            print(f'An error occurred: {e}')
+
     session.clear()
     return redirect("/")
 
+@app.route('/patient_role')
+def get_role():
+    user_role = session.get('role', 'not logged in')
+    return jsonify({"role": user_role})
+
+#----------------------track patient information--------------------------
+@app.route('/basic_info')
+def get_basic():
+    gid = decode_session(session.get('google_id'))
+    #print(session.get('google_id'))
+    #print(gid)
+    #return jsonify({"role": user_role})
+    user_data = db_search(collection,gid)
+    user_data['health'] = db_count(collection,gid)
+    if user_data:
+        return jsonify(user_data)
+    else:
+        return jsonify({"error": "Record not found"}), 404
+
+@app.route('/history/<date>')
+def get_record(date):
+    gid = decode_session(session.get('google_id'))
+    user_data = daily_record(collection,gid,date)
+    #print(user_data)
+    if user_data:
+        return jsonify(user_data)
+    else:
+        return jsonify({"error": "Record not found"}), 404
+    
+@app.route('/history/submit-current-info', methods=['POST'])
+def submit_current_info():
+    data = request.json
+    gid = decode_session(session.get('google_id'))
+    query = {'id':gid,'time':datetime.now().date().strftime("%Y-%m-%d")}
+    update_record(collection, query, data)
+    # Process and store the data in your database
+    # For example: add_record_to_database(data)
+    return jsonify({"message": "Data submitted successfully"})
+
+#--------------------------track patient information-------------------------
+@app.route('/api/patient_is_logged_in')
+def is_logged_in():
+    is_logged_in = 'google_id' in session
+    user_role = session.get('role', 'not logged in') if is_logged_in else 'not logged in'
+    return jsonify(logged_in=is_logged_in, role=user_role)
 
 
-@app.route('/')
-def navbar():
-    if 'user_id' not in session:
-        # 用户未登录，重定向到登录页面
-        return redirect(url_for('login'))
-
-@app.route('/protected_area')
+@app.route("/protected_area")
 def hello():
+    app.logger.debug('Session: %s', session)
+    app.logger.debug(url_for('static', filename='css/style.css'))
+    app.logger.debug(url_for('static', filename='js/script.js'))
+    #app.logger.debug(url_for('static'))
+    if 'google_id' not in session:
+        # 用户未登录，重定向到登录页面
+        return redirect(url_for("patient_login"))
+    print("Accessed the protected area")
+    print(session)
+    #app.logger.debug(render_template('navbar.html'))
     return render_template('navbar.html')
 
-@app.route('/model_output', methods=['GET', 'POST'])
+'''
+@app.route("/model_output", methods=['GET', 'POST'])
 def model_output():
     if request.method == 'POST':
         patient_id = int(request.form['patient_id'])
@@ -346,13 +490,54 @@ def model_output():
 
 
         # Return the prediction results
-        return render_template('model_output.html', predicted_output_gru=pred_y_gru, predicted_output_lstm=pred_y_lstm, predicted_output_logreg=pred_y_logreg, predicted_output_rf=pred_y_rf, predicted_output_xgb=pred_y_xgb, input_data=input_data, actual_output=y, patient_id=patient_id)
+        return render_template("model_output.html", predicted_output_gru=pred_y_gru, predicted_output_lstm=pred_y_lstm, predicted_output_logreg=pred_y_logreg, predicted_output_rf=pred_y_rf, predicted_output_xgb=pred_y_xgb, input_data=input_data, actual_output=y, patient_id=patient_id)
     else:
-        return render_template('model_output.html')
+        return render_template("model_output.html")
+'''
+users_db = {
+    '110788464327696265201': 'patient',
+    '104593466792040682115': 'patient',
+    '104405107080836112407': 'doctor',
+    '117740487543455173970': 'volunteer',
+}
+from flask_graphql import GraphQLView
+import graphene
 
-@app.route('/labs')
+@app.route("/labs")
 def labs():
-    return render_template('labs.html')
+    return render_template("labs.html")
+
+
+class ModelSettings(graphene.ObjectType):
+    id=graphene.String()
+    time=graphene.String()
+    sports=graphene.Int()
+    bloodpressure=graphene.Int()
+    bloodsugar=graphene.Int()
+
+class Query(graphene.ObjectType):
+    model_settings = graphene.Field(ModelSettings, id=graphene.String(required=True), time=graphene.String(required=True))
+    #model_settings = ModelSettings(**model_predictions())
+    hello = graphene.String(default_value="Hi there!")
+    def resolve_model_settings(self,info, id, time):
+        return ModelSettings(**find_user(collection,id,time))
+        #return ModelSettings({'id': '104593466792040682115', 'time': '2019-02-14', 'sports': 5, 'blood pressure': 103, 'blood sugar': 4})
+
+schema = graphene.Schema(query=Query)
+
+app.add_url_rule(
+    '/graphql', 
+    view_func=GraphQLView.as_view(
+        'graphql', 
+        schema=graphene.Schema(query=Query), 
+        graphiql=True 
+    )
+)
+
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    mongo_url = "mongodb+srv://xzj:xzj123456@ss3.sqitwwg.mongodb.net/"
+    client = pymongo.MongoClient(mongo_url)
+    collection = client['6156']
+    app.run(host = '0.0.0.0',port = 5000, debug=True)
